@@ -40,8 +40,9 @@ export default function Home() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const ws = useRef<WebSocket | null>(null);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
   const WS_BASE = API_BASE.replace(/^http/, 'ws');
 
   // Load favorites
