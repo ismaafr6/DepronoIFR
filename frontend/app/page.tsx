@@ -35,7 +35,7 @@ export default function Home() {
   const [sovereignKey, setSovereignKey] = useState("");
   const [seedPhrase, setSeedPhrase] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [godMode, setGodMode] = useState(true);
+  const [godMode, setGodMode] = useState(false);
   
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
