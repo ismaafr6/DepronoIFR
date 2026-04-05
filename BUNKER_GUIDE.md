@@ -1,4 +1,4 @@
-# 🛡️ GUÍA DE DESPLIEGUE: EL BÚNKERO (V15.0)
+# 🛡️ GUÍA DE DESPLIEGUE: EL BÚNKERO (V16.0.0)
 
 Para que tu "Máquina de Hacer Dinero" sea **100% tuya, privada e inatacable**, sigue estos pasos para desplegar en un **VPS Privado (Hetzner, DigitalOcean o tu propio servidor)**.
 

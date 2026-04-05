@@ -10,13 +10,18 @@ import { MatchList } from './components/MatchList';
 import { AIChat } from './components/AIChat';
 import { Pitch3D } from './components/Pitch3D';
 import { NeuralBackground } from './components/NeuralBackground';
+import { NotificationToast } from './components/NotificationToast';
+import { OddsExplorer } from './components/OddsExplorer';
 
 export default function Home() {
-  const [view, setView] = useState<'list' | 'detail' | 'explorer' | 'about' | 'bastion'>('bastion');
+  const [view, setView] = useState<'list' | 'detail' | 'explorer' | 'about' | 'bastion' | 'odds'>('bastion');
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [selectedFixture, setSelectedFixture] = useState<any>(null);
   const [data, setData] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [odds, setOdds] = useState<any[]>([]);
   
   const [sovereignKey, setSovereignKey] = useState("");
   const [seedPhrase, setSeedPhrase] = useState("");
@@ -26,6 +31,46 @@ export default function Home() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const ws = useRef<WebSocket | null>(null);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const WS_BASE = API_BASE.replace(/^http/, 'ws');
+
+  // Load favorites
+  useEffect(() => {
+    const saved = localStorage.getItem('bastion_favorites');
+    if (saved) setFavorites(JSON.parse(saved));
+  }, []);
+
+  // Save favorites
+  useEffect(() => {
+    localStorage.setItem('bastion_favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
+    );
+    
+    // Notify on toggle
+    const fixture = fixtures.find(f => f.id === id);
+    if (fixture) {
+        addNotification(
+            "Favorito Actualizado",
+            `${fixture.home} vs ${fixture.away} ha sido ${favorites.includes(id) ? 'eliminado de' : 'añadido a'} tus favoritos.`,
+            'info'
+        );
+    }
+  };
+
+  const addNotification = (title: string, message: string, type: 'info' | 'success' | 'warning' = 'info') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setNotifications(prev => [{ id, title, message, type }, ...prev]);
+    setTimeout(() => removeNotification(id), 5000);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   const decryptPayload = (payload: any) => {
     if (payload.encrypted) {
@@ -49,20 +94,30 @@ export default function Home() {
 
   const unlockBastion = async () => {
     try {
-        const data = await fetchWithBastion('http://localhost:8000/fixtures');
+        const data = await fetchWithBastion(`${API_BASE}/fixtures`);
         setFixtures(data);
-        const logData = await fetchWithBastion('http://localhost:8000/bastion/logs');
+        const logData = await fetchWithBastion(`${API_BASE}/bastion/logs`);
         setLogs(logData);
         setIsAuthorized(true);
         setView('list');
+        fetchOdds(); // Pre-fetch odds
     } catch (e: any) {
         alert(e.message === "LOCKED" ? "BASTIÓN_CONGELADO_ATAQUE_DETECTADO" : "LLAVE_O_SEMILLA_INVALIDA");
     }
   };
 
+  const fetchOdds = async () => {
+    try {
+        const oddsData = await fetchWithBastion(`${API_BASE}/odds`);
+        setOdds(oddsData);
+    } catch (e) {
+        console.error("Failed to fetch odds", e);
+    }
+  };
+
   useEffect(() => {
     if (view === 'detail' && selectedFixture) {
-        ws.current = new WebSocket('ws://localhost:8000/live');
+        ws.current = new WebSocket(`${WS_BASE}/live`);
         ws.current.onmessage = (event) => {
             const encrypted = JSON.parse(event.data);
             setData(decryptPayload(encrypted));
@@ -70,6 +125,23 @@ export default function Home() {
         return () => ws.current?.close();
     }
   }, [view, selectedFixture]);
+
+  // Demo Notification logic: If a favorite team is in the fixtures, simulate an event
+  useEffect(() => {
+    if (isAuthorized && favorites.length > 0) {
+        const favFixtures = fixtures.filter(f => favorites.includes(f.id));
+        if (favFixtures.length > 0) {
+            const timer = setTimeout(() => {
+                addNotification(
+                    "¡GOL DETECTADO!",
+                    `Tu favorito ${favFixtures[0].home} ha marcado. El sistema está recalculando cuotas de rentabilidad.`,
+                    'success'
+                );
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }
+  }, [isAuthorized, favorites]);
 
   if (!isAuthorized && view === 'bastion') {
     return (
@@ -98,6 +170,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen transition-all duration-1000 ${godMode ? 'bg-zinc-50' : 'bg-[#000]'} text-zinc-900 overflow-x-hidden relative`}>
       <NeuralBackground />
+      <NotificationToast notifications={notifications} onClose={removeNotification} />
       
       <header className={`sticky top-6 z-50 h-24 flex items-center justify-between px-8 bg-white/40 backdrop-blur-3xl border border-white/80 mx-6 rounded-[40px] shadow-2xl transition-all duration-1000`}>
         <div className="flex items-center gap-6">
@@ -106,7 +179,10 @@ export default function Home() {
                 <h1 className="text-3xl font-black tracking-tighter italic text-zinc-900 flex items-center gap-3">
                     BASTIÓN_V16 <Eye className="w-8 h-8 text-blue-500 animate-pulse" />
                 </h1>
-                <span className="text-[8px] font-black uppercase text-blue-600/80 tracking-[1.4em]">DEFENSIVE_PERFECTION</span>
+                <div className="flex items-center gap-2">
+                    <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                    <span className="text-[8px] font-black uppercase text-blue-600/80 tracking-[1.4em]">NEURAL_HEARTBEAT_ACTIVE_99.9%</span>
+                </div>
             </div>
         </div>
         <div className="flex items-center gap-4">
@@ -136,7 +212,16 @@ export default function Home() {
                             </div>
                         ))}
                     </div>
-                    <MatchList fixtures={fixtures} onSelect={(id) => { setSelectedFixture(fixtures.find(f => f.id === id)); setView('detail'); }} />
+                    <MatchList 
+                        fixtures={fixtures} 
+                        favorites={favorites}
+                        onToggleFavorite={toggleFavorite}
+                        onSelect={(id) => { setSelectedFixture(fixtures.find(f => f.id === id)); setView('detail'); }} 
+                    />
+                </motion.div>
+          ) : view === 'odds' ? (
+                <motion.div key="odds" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <OddsExplorer odds={odds} />
                 </motion.div>
           ) : (
             <motion.div key="detail" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
@@ -180,7 +265,7 @@ export default function Home() {
       <nav className="fixed bottom-0 inset-x-0 h-28 backdrop-blur-3xl border-t border-zinc-100 flex items-center justify-around px-10 z-50 bg-white/80">
         <TabItem icon={<Target />} label="Stream" active={view === 'list'} onClick={() => setView('list')} />
         <TabItem icon={<Shield />} label="Bastión" active={view === 'bastion'} onClick={() => setView('bastion')} />
-        <TabItem icon={<Radar />} label="Radar" active={false} onClick={() => {}} />
+        <TabItem icon={<Radar />} label="Radar" active={view === 'odds'} onClick={() => setView('odds')} />
       </nav>
     </div>
   );

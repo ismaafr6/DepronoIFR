@@ -64,6 +64,11 @@ async def get_fixtures():
 async def get_logs():
     return bastion.logs
 
+@app.get("/odds", dependencies=[Depends(verify_bastion)])
+async def get_odds():
+    from mock_data import MOCK_ODDS
+    return bastion.encrypt_payload(MOCK_ODDS)
+
 @app.websocket("/live")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()

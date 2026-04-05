@@ -1,8 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, ShieldCheck } from 'lucide-react';
+import { Zap, ShieldCheck, Heart } from 'lucide-react';
 
-export function MatchList({ fixtures, onSelect }: { fixtures: any[], onSelect: (id: number) => void }) {
+export function MatchList({ 
+  fixtures, 
+  onSelect,
+  favorites = [],
+  onToggleFavorite
+}: { 
+  fixtures: any[], 
+  onSelect: (id: number) => void,
+  favorites?: number[],
+  onToggleFavorite?: (id: number) => void
+}) {
   return (
     <div className="space-y-6">
       {fixtures.map((f, i) => (
@@ -14,8 +24,17 @@ export function MatchList({ fixtures, onSelect }: { fixtures: any[], onSelect: (
           onClick={() => onSelect(f.id)}
           className="glass-ifr p-6 rounded-[32px] cursor-pointer hover:scale-[1.02] transition-all group relative overflow-hidden"
         >
-          {/* Success Percentage Badge */}
-          <div className="absolute top-0 right-0 p-4">
+          {/* Success Percentage Badge & Favorite */}
+          <div className="absolute top-0 right-0 p-4 flex items-center gap-3">
+             <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite?.(f.id);
+                }}
+                className={`p-2 rounded-xl transition-all ${favorites.includes(f.id) ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-white/50 text-zinc-400 hover:text-rose-500'}`}
+             >
+                <Heart size={14} fill={favorites.includes(f.id) ? "currentColor" : "none"} />
+             </button>
              <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-2xl flex items-center gap-2">
                 <Zap className="w-3 h-3 text-emerald-500" fill="currentColor" />
                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">
