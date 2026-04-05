@@ -135,12 +135,22 @@ export default function Home() {
 
   useEffect(() => {
     if (view === 'detail' && selectedFixture) {
-        ws.current = new WebSocket(`${WS_BASE}/live`);
-        ws.current.onmessage = (event) => {
-            const encrypted = JSON.parse(event.data);
-            setData(decryptPayload(encrypted));
-        }
-        return () => ws.current?.close();
+        const startPolling = async () => {
+            try {
+                // Usamos fetch normal para el live data en demo/api
+                const response = await fetch(`${API_BASE}/live`);
+                const liveData = await response.json();
+                setData(liveData);
+            } catch (e) {
+                console.error("Polling error", e);
+            }
+        };
+
+        startPolling();
+        pollingInterval.current = setInterval(startPolling, 5000);
+        return () => {
+            if (pollingInterval.current) clearInterval(pollingInterval.current);
+        };
     }
   }, [view, selectedFixture]);
 
