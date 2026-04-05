@@ -91,9 +91,10 @@ export default function Home() {
 
   const fetchWithBastion = async (url: string) => {
     const res = await fetch(url, {
+        cache: 'no-store',
         headers: { 
-            'X-Sovereign-Key': sovereignKey,
-            'X-Seed-Phrase': seedPhrase
+            'X-Sovereign-Key': sovereignKey.trim(),
+            'X-Seed-Phrase': seedPhrase.trim()
         }
     });
     if (res.status === 403) throw new Error("BAD_CREDS");
@@ -209,7 +210,7 @@ export default function Home() {
                 </h1>
                 <div className="flex items-center gap-2">
                     <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }} className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                    <span className="text-[8px] font-black uppercase text-blue-600/80 tracking-[1.4em]">NEURAL_HEARTBEAT_ACTIVE_99.9%</span>
+                    <span className="text-[8px] font-black uppercase text-blue-600/80 tracking-[1.4em]">NEURAL_HEARTBEAT_ACTIVE_V16.0.4</span>
                 </div>
             </div>
         </div>
