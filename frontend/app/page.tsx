@@ -225,28 +225,34 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="p-6 max-w-lg mx-auto pb-44 pt-12 relative z-10">
+      <main className="p-6 max-w-7xl mx-auto pb-44 pt-12 relative z-10 transition-all duration-700">
         <AnimatePresence mode="wait">
           {view === 'list' ? (
                 <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-                     <div className="grid grid-cols-1 gap-6">
-                        <h2 className="text-2xl font-black italic px-4">Intrusion Logs</h2>
-                        {logs.slice(0, 3).map((l, i) => (
-                            <div key={i} className="bg-white p-8 rounded-[48px] border border-zinc-100 flex justify-between items-center shadow-sm">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase">{l.time}</p>
-                                    <p className="font-black text-zinc-900">{l.ip}</p>
-                                </div>
-                                <span className={`px-4 py-1 rounded-full text-[10px] font-black ${l.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>{l.status}</span>
-                            </div>
-                        ))}
+                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                             <MatchList 
+                                fixtures={fixtures} 
+                                favorites={favorites}
+                                onToggleFavorite={toggleFavorite}
+                                onSelect={(id) => { setSelectedFixture(fixtures.find(f => f.id === id)); setView('detail'); }} 
+                            />
+                        </div>
+                        <div className="space-y-8">
+                             <h2 className="text-2xl font-black italic px-4 text-white">Intrusion Logs</h2>
+                             <div className="space-y-4">
+                                {logs.map((l, i) => (
+                                    <div key={i} className="bg-white/5 backdrop-blur-md p-6 rounded-[32px] border border-white/10 flex justify-between items-center shadow-xl hover:border-blue-500/50 transition-all">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-zinc-500 uppercase">{l.time}</p>
+                                            <p className="font-black text-white">{l.ip}</p>
+                                        </div>
+                                        <span className={`px-4 py-1 rounded-full text-[10px] font-black ${l.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>{l.status}</span>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
                     </div>
-                    <MatchList 
-                        fixtures={fixtures} 
-                        favorites={favorites}
-                        onToggleFavorite={toggleFavorite}
-                        onSelect={(id) => { setSelectedFixture(fixtures.find(f => f.id === id)); setView('detail'); }} 
-                    />
                 </motion.div>
           ) : view === 'odds' ? (
                 <motion.div key="odds" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
